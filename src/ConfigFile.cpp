@@ -106,7 +106,7 @@ void ConfigFile::ExtractKeys()
 
     // Begin config dump to file (xpad-mouse defaults)
     outfile << "# ============================================================" << std::endl;
-    outfile << "#  xpad-mouse 默认配置（基于 Gopher360 配置格式，GPL-3.0）" << std::endl;
+    outfile << "#  xpad-mouse v2.4 默认配置（基于 Gopher360 配置格式，GPL-3.0）" << std::endl;
     outfile << "#  删除本文件后重新启动程序会自动生成一份新的。" << std::endl;
     outfile << "# ============================================================" << std::endl;
     outfile << "#" << std::endl;
@@ -135,7 +135,7 @@ void ConfigFile::ExtractKeys()
     outfile << "SCROLL_DEAD_ZONE = 5000" << std::endl;
     outfile << "# 滚轮速度" << std::endl;
     outfile << "SCROLL_SPEED = 0.1" << std::endl;
-    outfile << "# 加速曲线：0=线性；填 2 或 3 = 慢速更精细、快速更迅猛" << std::endl;
+    outfile << "# 渐进加速：0=关（纯线性）；1~4 推得越深、按得越久，指针提速越猛" << std::endl;
     outfile << "ACCELERATION_FACTOR = 0" << std::endl;
     outfile << "# 1 = 交换摇杆（右摇杆移鼠标，左摇杆滚轮）" << std::endl;
     outfile << "SWAP_THUMBSTICKS = 0" << std::endl;

@@ -189,7 +189,7 @@ int main(int argc, char **argv)
   // UTF-8 控制台，保证中文正常显示
   SetConsoleOutputCP(CP_UTF8);
   SetConsoleCP(CP_UTF8);
-  SetConsoleTitleA("xpad-mouse 手柄鼠标");
+  SetConsoleTitleA("xpad-mouse v2.4 手柄鼠标");
 
   // 高分屏下坐标 1:1（上游没有这个，缩放屏幕会偏移）
   SetProcessDPIAware();
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
   loadConfig(cfg);
 
   printf("==============================================\n");
-  printf(" xpad-mouse 手柄 -> 鼠标\n");
+  printf(" xpad-mouse v2.4 手柄 -> 鼠标\n");
   printf(" 基于 Gopher360 改装 (GPL-3.0)\n");
   printf("==============================================\n");
   printf(" 左摇杆  = 移动鼠标指针\n");
@@ -246,6 +246,7 @@ int main(int argc, char **argv)
 
   WORD prevButtons = 0;
   float xRest = 0.f, yRest = 0.f;       // 亚像素累加（沿用上游）
+  float holdMs = 0.f;                   // 渐进加速：推杆持续时间累计
   float wheelAccV = 0.f, wheelAccH = 0.f; // 滚轮小数累加（改进项）
   size_t speedIdx = 0;
   float speed = cfg.speeds[0].value;
@@ -371,12 +372,26 @@ int main(int argc, char **argv)
     float dx = 0.f, dy = 0.f;
 
     float lengthsq = (float)tx * tx + (float)ty * ty;
-    if (lengthsq > cfg.deadzone * cfg.deadzone)
+    bool pushed = lengthsq > cfg.deadzone * cfg.deadzone;
+    if (pushed)
     {
-      float mult = speed * stickMult(lengthsq, cfg.deadzone, cfg.accel, FPS);
+      // 线性基础速度
+      float mult = speed * stickMult(lengthsq, cfg.deadzone, 0.f, FPS);
+      // 渐进加速：推得越深 + 按得越久 → 越快；accel=0 为纯线性（与 GUI 版同一公式）
+      if (cfg.accel > 0.001f)
+      {
+        float n = (sqrtf(lengthsq) - cfg.deadzone) / (32767.f - cfg.deadzone);
+        if (n > 1.f) n = 1.f;
+        float tb = holdMs / 600.f;
+        if (tb > 1.f) tb = 1.f;
+        mult *= (1.f + cfg.accel * 0.35f * n) * (1.f + cfg.accel * 0.25f * tb);
+      }
       dx = stickDelta(tx) * mult;
       dy = stickDelta(ty) * mult;
     }
+    // 推杆时间累计，松开快速复位
+    if (pushed) { holdMs += (float)SLEEP_AMOUNT; if (holdMs > 800.f) holdMs = 800.f; }
+    else { holdMs -= 3.f * SLEEP_AMOUNT; if (holdMs < 0.f) holdMs = 0.f; }
 
     x += dx;
     y -= dy;                      // 摇杆向上（ty 为负）= 鼠标向上（y 减小）
